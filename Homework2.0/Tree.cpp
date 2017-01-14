@@ -30,6 +30,13 @@ private:
 	int max(int, int);
 	int diameter(Node<T>*);
 
+
+	//EXAM
+	void isMirrorRLR(stack<T>& stack, Node<T>* currentRoot);
+	void isMirrorRRL(stack<T>& stack, Node<T>* currentRoot);
+	void rotateBTree(Node<T>* currentRoot);
+
+
 public:
 	BTree();
 	BTree<T>& add(const T& data, const char* trace);
@@ -43,6 +50,9 @@ public:
 	void insertBOT(const T& x);
 	int diameter();
 	void printColumns() const;
+	bool isMirror();
+
+	BTree<T>& rotateBTree();
 };
 
 template<class T>
@@ -378,6 +388,8 @@ void BTree<T>::printColumns() const
 	}
 }
 
+
+
 template<class T>
 int BTree<T>::height(Node<T>* currentRoot)
 {
@@ -409,6 +421,266 @@ int BTree<T>::diameter(Node<T>* currentRoot)
 	int rightDiameter = diameter(currentRoot->right);
 	return max((leftHeight + rightHeight + 1), max(leftDiameter, rightDiameter));
 }
+
+
+
+
+//EXAM
+//problem1
+template<class T>
+void BTree<T>::isMirrorRLR(stack<T>& stack, Node<T>* currentRoot)
+{
+	if (currentRoot == NULL)
+	{
+		return;
+	}
+	if (currentRoot == root)
+	{
+		return;
+	}
+	stack.push(currentRoot->data);
+	isMirrorRLR(stack, currentRoot->left);
+	isMirrorRLR(stack, currentRoot->right);
+}
+
+template<class T>
+void BTree<T>::isMirrorRRL(stack<T>& stack, Node<T>* currentRoot)
+{
+	if (currentRoot == NULL)
+	{
+		return;
+	}
+	if (currentRoot == root)
+	{
+		return;
+	}
+	stack.push(currentRoot->data);
+	isMirrorRRL(stack, currentRoot->right);
+	isMirrorRRL(stack, currentRoot->left);
+}
+
+template<class T>
+bool BTree<T>::isMirror()
+{
+	if (root == NULL)
+	{
+		return false;
+	}
+	stack<T> leftSubTree;
+	stack<T> rightSubTree;
+
+	isMirrorRLR(leftSubTree, root->left);
+	isMirrorRRL(rightSubTree, root->right);
+
+	while (!leftSubTree.empty())
+	{
+		if (leftSubTree.top() != rightSubTree.top())
+		{
+			return false;
+		}
+		leftSubTree.pop();
+		rightSubTree.pop();
+	}
+	return rightSubTree.empty();
+}
+
+//bonus
+template<class T>
+BTree<T>& BTree<T>::rotateBTree()
+{
+	if (root == NULL)
+	{
+		return *this;
+	}
+	rotateBTree(root);
+	return *this;
+}
+
+template<class T>
+void BTree<T>::rotateBTree(Node<T>* currentRoot)
+{
+	if (currentRoot == NULL)
+	{
+		return;
+	}
+	Node<T>* temp = currentRoot->left;
+	currentRoot->left = currentRoot->right;
+	currentRoot->right = temp;
+
+	rotateBTree(currentRoot->left);
+	rotateBTree(currentRoot->right);
+}
+
+//problem 2
+struct Nodee {
+	int data;
+	Nodee* next;
+};
+
+Nodee* rotate(Nodee* node, int pivot)
+{
+	Nodee* startNode = node; // <- not to lose it
+	//before pivot
+	queue<int> before;
+	//after pivot
+	queue<int> after;
+	bool pivotFound = false; //if they give us a wrong pivot
+	
+	while (node->next != nullptr)
+	{
+		if (node->next->data == pivot)
+		{
+			pivotFound = true;
+			break;
+		}
+		before.push(node->next->data);
+		node = node->next;
+	}
+	while (node->next != nullptr)
+	{
+		after.push(node->next->data);
+		node = node->next;
+	}
+	
+	Nodee* start = startNode;
+	//now rotate
+	while (!before.empty())
+	{
+		startNode->next->data = before.front();
+		startNode = startNode->next;
+		before.pop();
+	}
+	if (pivotFound)
+	{
+		//assert would be good here :D
+		startNode->next->data = pivot;
+		startNode = startNode->next;
+	}
+	while (!after.empty())
+	{
+		startNode->next->data = after.front();
+		startNode = startNode->next;
+		after.pop();
+	}
+	return start;
+}
+
+
+//problem 0
+#define MAX 10
+class Circular_Queue
+{
+private:
+	int* cqueue_arr;
+	int currentNumber;
+public:
+	Circular_Queue(int currentNumber)
+	{
+		cqueue_arr = new int[MAX];
+		for (int i = 0, digit = 9; i < MAX; i++, digit--)
+		{
+			cqueue_arr[i] = digit;
+		}
+	}
+	int prevDigit()
+	{
+		return (this->currentNumber - 1) % 10;
+	}
+
+	int nextDigit()
+	{
+		return (this->currentNumber + 1) % 10;
+	}
+	int currentDigit()
+	{
+		return this->currentNumber;
+	}
+};
+
+int calcSecondsToOpenSafe(int input[5], int output[5], int n, int** forbiddenCombinations)
+{
+	int seconds = 0;
+	Circular_Queue digitOne(*input);
+	Circular_Queue digitTwo(*(input + 1));
+	Circular_Queue digitThee(*(input + 2));
+	Circular_Queue digitFour(*(input + 3));
+	Circular_Queue digitFive(*(input + 4));
+
+	while (digitOne.currentDigit() != *output)
+	{
+		if (digitOne.currentDigit() < *output)
+		{
+			digitOne.nextDigit();
+		}
+		else
+		{
+			digitOne.prevDigit();
+		}
+		seconds++;
+	}
+
+
+	while (digitTwo.currentDigit() != *(output+1))
+	{
+		if (digitTwo.currentDigit() < *output)
+		{
+			digitTwo.nextDigit();
+		}
+		else
+		{
+			digitTwo.prevDigit();
+		}
+		seconds++;
+	}
+
+	while (digitThee.currentDigit() != *(output + 2))
+	{
+		if (digitThee.currentDigit() < *output)
+		{
+			digitThee.nextDigit();
+		}
+		else
+		{
+			digitThee.prevDigit();
+		}
+		seconds++;
+	}
+
+	while (digitFour.currentDigit() != *(output + 3))
+	{
+		if (digitFour.currentDigit() < *output)
+		{
+			digitFour.nextDigit();
+		}
+		else
+		{
+			digitFour.prevDigit();
+		}
+		seconds++;
+	}
+
+	while (digitFive.currentDigit() != *(output + 4))
+	{
+		if (digitFive.currentDigit() < *output)
+		{
+			digitFive.nextDigit();
+			//check forbidden
+		}
+		else
+		{
+			digitFive.prevDigit();
+		}
+		seconds++;
+	}
+
+	return seconds;
+}
+
+bool forbiddenCombinations(int numberToCheck, int n, int** forbiddenCombinations)
+{
+	return true;
+}
+
 
 int main()
 {
@@ -458,6 +730,27 @@ int main()
 	cout << "****************" << endl;
 	tree.printColumns();
 	
+
+	cout << "****************" << endl;
+	BTree<int> tr;
+
+	tr.add(3, "")
+		.add(1, "L")
+		.add(0, "LL")
+		.add(3, "LLL")
+		.add(2, "LR")
+		.add(4, "LRR")
+		.add(1, "R")
+		.add(0, "RR")
+		.add(3, "RRR")
+		.add(2, "RL")
+		.add(4, "RLL");
+	cout << "****************" << endl;
+	cout << boolalpha << tr.isMirror() << endl;
+	cout << "****************" << endl;
+	t.simplePrint();
+	t.rotateBTree().simplePrint();
+
 	system("pause");
 	return 0;
 }
