@@ -17,6 +17,16 @@ struct Node
 			children[i] = nullptr;
 		}
 	}
+	Node& operator= (const Node& rhs)
+	{
+		data = new char[strlen(rhs.data) + 1];
+		strcpy_s(data, strlen(rhs.data) + 1, rhs.data);
+		for (size_t i = 0; i < 5; ++i)
+		{
+			children[i] = rhs.children[i];
+		}
+		return *this;
+	}
 };
 class TreeShortRoot
 {

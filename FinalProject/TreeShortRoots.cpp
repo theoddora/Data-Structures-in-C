@@ -12,8 +12,8 @@ void TreeShortRoot::insert(const char* path)
 {
 	if (strcmp(path, "start") == 0)
 	{
-		Node node("start");
-		root = &node;
+		Node* node = new Node("start");
+		root = node;
 		return;
 	}
 
@@ -21,13 +21,12 @@ void TreeShortRoot::insert(const char* path)
 	char character = path[0];
 	switch (character)
 	{
-	case 'f':currentRoot = currentRoot->children[0]; break;
+	case 'f':insert(currentRoot->children[0], path); break;
 	case 'b':currentRoot = currentRoot->children[1]; break;
 	case 'l':currentRoot = currentRoot->children[2]; break;
 	case 'r':currentRoot = currentRoot->children[3]; break;
 	case 'p':currentRoot = currentRoot->children[4]; break;
 	}
-	insert(currentRoot, path);
 }
 
 void TreeShortRoot::print()
@@ -50,11 +49,9 @@ void TreeShortRoot::print(Node* currentRoot)
 
 void TreeShortRoot::insert(Node* currentRoot, const char* path)
 {
-	if (currentRoot = nullptr)
+	if (currentRoot == NULL)
 	{
-		char character = path[0];
-		Node node(path);
-		currentRoot = &node;
+		currentRoot = new Node(path);
 		return;
 	}
 	int size = strlen(path) + 1, index = 0;
@@ -71,6 +68,6 @@ void TreeShortRoot::insert(Node* currentRoot, const char* path)
 		}
 	}
 	char character = path[0];
-	Node node(path);
-	currentRoot = &node;
+	Node* node = new Node(path);
+	currentRoot = node;
 }
