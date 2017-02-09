@@ -1,0 +1,4 @@
+cluster #0 with center point[1, 1.66667];  has the following 3 points:
+point[1, 1]; point[2, 2]; point[0, 2]; 
+cluster #1 with center point[6.5, 6.5];  has the following 2 points:
+point[6, 6]; point[7, 7]; 

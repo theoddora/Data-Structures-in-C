@@ -1,44 +1,43 @@
-#include <iostream>
-#include<utility>
 #include<vector>
 #include<map>
 #include<set>
+#include "ClusterCentroids.h"
 using namespace std;
 
 #ifndef KMEANS_H
 #define KMEANS_H
 
-using Point = pair<double,double>;
-
 class Kmeans
 {
 private:
-	size_t m_k;
-	map<int, set<Point>> m_closestCentroid; // index of centroid -> points close to him
-	vector<Point> m_points;
-	size_t m_fieldSizeX;
-	size_t m_fieldSizeY;
-	size_t m_numberOfPoints;
+	size_t m_k; // number of clusters
+	vector<Point> m_points; // points we are going to clusterize
+
+	map<size_t, vector<size_t>> m_closestCentroid; // index of centroid of cluster -> points close to him
+	map<size_t, set<Point>> m_pointsBelongingToCluster; // index of centroid of cluster -> points close to him	
+	map<size_t, vector<size_t>> clusterPointChanges; // points who stayed in their cluster and didnt go to another one
 	
-	bool* m_hasChanged;
-	Point* m_clusterCentroids;
+	ClusterCentroids* m_clusterCentroids; // the generated centroids during algorithm
 
 	void init(size_t k);
 	void makeRandomCentroids();
+
+	size_t Kmeans::partition(const size_t, const size_t);
+	void orderPoints(size_t, size_t);
+
+	void putPointsInClusters();
 	bool checkChanges();
-	void makeFalse();
-	size_t min(Point& p);
-	Point average(set<Point>&);
-	Point makePair();
-	bool isInSet(const set<Point>& points, Point p);
+	void redefineClusters();
+	void makeNewClusters();
+	
 	void loadPoints(const char*);
 	void printResult() const;
+	bool checkEmptyClusters();
 
 public:
 	Kmeans(const char*);
-	~Kmeans();
 
-	void clusterize(size_t k);
+	void clusterize(size_t);
 };
 
 #endif

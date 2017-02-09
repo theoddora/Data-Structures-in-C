@@ -1,170 +1,12 @@
 #include "Kmeans.h"
-#include <stdlib.h>
-#include <time.h>
 #include <fstream>
+#include <iostream>
+#include <algorithm>
 
-Kmeans::Kmeans(const char* points) : m_k(0), m_hasChanged(nullptr), m_clusterCentroids(nullptr)
+Kmeans::Kmeans(const char* points) : m_k(0), m_clusterCentroids(nullptr)
 {
+	m_clusterCentroids = new ClusterCentroids();
 	loadPoints(points);
-}
-
-Kmeans::~Kmeans()
-{
-	delete m_hasChanged;
-	delete[] m_clusterCentroids;
-}
-
-void Kmeans::clusterize(size_t k)
-{
-	init(k);
-	cout << "we are going to clusterize " << m_numberOfPoints << " points" << endl;
-
-	do
-	{
-		makeFalse();
-		for (size_t i = 0; i < m_numberOfPoints; ++i)
-		{
-			Point p = m_points[i];
-			size_t indexAtAddingPoint = min(p);
-			if (isInSet(m_closestCentroid.at(indexAtAddingPoint), p))
-			{
-				m_hasChanged[i] = true;
-			}
-			else
-			{
-				m_closestCentroid.at(indexAtAddingPoint).insert(p);
-			}
-		}
-
-		if (checkChanges())
-		{
-			break;
-		}
-
-		for (size_t i = 0; i < m_k; ++i)
-		{
-			Point p = average(m_closestCentroid.at(i));
-			cout << "new cluster centroid at position #" << i << "? -> " "[" << p.first << ", " << p.second << "]" << endl;
-			m_clusterCentroids[i] = make_pair(p.first, p.second);
-		}
-	} while (1);
-
-	printResult();
-}
-
-void Kmeans::init(size_t k)
-{
-	srand(time(NULL));
-	m_k = k;
-	m_clusterCentroids = new Point[m_k];
-	makeRandomCentroids();
-}
-
-void Kmeans::makeRandomCentroids()
-{
-	m_numberOfPoints = m_points.size();
-
-	m_hasChanged = new bool[m_numberOfPoints];
-
-	double x = m_points[0].first, y = m_points[0].second;
-	for (size_t i = 1; i < m_numberOfPoints; i++)
-	{
-		if (m_points[i].first > x)
-		{
-			x = m_points[i].first;
-		}
-		if (m_points[i].second > y)
-		{
-			y = m_points[i].second;
-		}
-	}
-	m_fieldSizeX = (int)ceil(x);
-	m_fieldSizeY = (int)ceil(y);
-
-	for (size_t i = 0; i < m_k; ++i)
-	{
-		m_clusterCentroids[i] = makePair();
-		m_closestCentroid[i];
-	}
-}
-
-bool Kmeans::checkChanges()
-{
-	for (auto const& entry : m_closestCentroid)
-	{
-		size_t pointsInCurrentCluster = entry.second.size();
-		if (pointsInCurrentCluster == 0)
-		{
-			return false;
-		}
-	}
-	int counterPointsInClusters = 0;
-	for (size_t i = 0; i < m_numberOfPoints; ++i)
-	{
-		if (m_hasChanged[i])
-		{
-			++counterPointsInClusters;
-		}
-	}
-	return counterPointsInClusters == m_numberOfPoints;
-}
-
-void Kmeans::makeFalse()
-{
-	for (size_t i = 0; i < m_numberOfPoints; ++i)
-	{
-		m_hasChanged[i] = false;
-	}
-}
-
-size_t Kmeans::min(Point& p)
-{
-	double minDistance = sqrt(pow((m_clusterCentroids[0].first - p.first), 2) + pow((m_clusterCentroids[0].second - p.second), 2));
-	size_t index = 0;
-
-	double distance;
-	for (size_t i = 1; i < m_k; ++i)
-	{
-		distance = sqrt(pow((m_clusterCentroids[i].first - p.first), 2) + pow((m_clusterCentroids[i].second - p.second), 2));
-		if (distance < minDistance)
-		{
-			index = i;
-		}
-	}
-	return index;
-}
-
-Point Kmeans::average(set<Point>& pointsToCluster)
-{
-	size_t numberOfPoiunts = pointsToCluster.size();
-	if (numberOfPoiunts == 0)
-	{
-		return makePair();
-	}
-	double x = 0, y = 0;
-	for (set<Point>::iterator it = pointsToCluster.begin(); it != pointsToCluster.end(); ++it)
-	{
-		x += it->first;
-		y += it->second;
-	}
-	return Point(x / numberOfPoiunts, y / numberOfPoiunts);
-}
-
-Point Kmeans::makePair()
-{
-	return make_pair(rand() % m_fieldSizeX, rand() % m_fieldSizeY);
-}
-
-bool Kmeans::isInSet(const set<Point>& points, Point p)
-{
-	for (set<Point>::iterator it = points.begin(); it != points.end(); ++it)
-	{
-		if (p.first == it->first && p.second == it->second)
-		{
-			return true;
-		}
-	}
-	return false;
 }
 
 void Kmeans::loadPoints(const char* points)
@@ -178,7 +20,7 @@ void Kmeans::loadPoints(const char* points)
 	do
 	{
 		file.getline(line, 1024);
-		if (file.eof())
+		if (!file)
 		{
 			break;
 		}
@@ -194,30 +36,219 @@ void Kmeans::loadPoints(const char* points)
 
 void Kmeans::printResult() const
 {
+	ofstream myfile;
+	myfile.open("example.txt");
 	size_t i = 0;
-	for (auto const& entry : m_closestCentroid)
+	for (auto entry : m_closestCentroid)
 	{
+		Point p = m_clusterCentroids->get(i++);
+
 		cout << "cluster #"
 			<< entry.first
 			<< " with center "
 			<< "point["
-			<< m_clusterCentroids[i].first
+			<< p.first
 			<< ", "
-			<< m_clusterCentroids[i].second
+			<< p.second
 			<< "]; "
 			<< " has the following "
 			<< entry.second.size()
-			<< "points:\n";
+			<< " points:\n";
 
-		for (set<Point>::iterator it = entry.second.begin(); it != entry.second.end(); ++it)
+		myfile << "cluster #"
+			<< entry.first
+			<< " with center "
+			<< "point["
+			<< p.first
+			<< ", "
+			<< p.second
+			<< "]; "
+			<< " has the following "
+			<< entry.second.size()
+			<< " points:\n";
+
+		for (vector<size_t>::iterator it = entry.second.begin(); it != entry.second.end(); ++it)
 		{
 			cout << "point["
-				<< it->first
+				<< m_points.at(*it).first
 				<< ", "
-				<< it->second
+				<< m_points.at(*it).second
+				<< "]; ";
+			myfile << "point["
+				<< m_points.at(*it).first
+				<< ", "
+				<< m_points.at(*it).second
 				<< "]; ";
 		}
 		cout << endl;
+		myfile << endl;
+	}
+	cout << "---- now writing to file ----" << endl;
+
+	myfile.close();
+}
+
+bool Kmeans::checkEmptyClusters()
+{
+	for (size_t i = 0; i < m_k; i++)
+	{
+		if (m_closestCentroid.at(i).size() == 0)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void Kmeans::init(size_t k)
+{
+	m_k = k;
+	//orderPoints(0, m_points.size() - 1);
+	makeRandomCentroids();
+}
+
+size_t Kmeans::partition(const size_t left, const size_t right)
+{
+	const int mid = left + (right - left) / 2;
+	const Point pivot = m_points[mid];
+
+	swap(m_points[mid], m_points[left]);
+	int i = left + 1;
+	int j = right;
+
+	while (i <= j)
+	{
+		while (i <= j && m_points[i].first <= pivot.first)
+			i++;
+
+		while (i <= j && m_points[j].first > pivot.first)
+			j--;
+
+		if (i < j)
+			swap(m_points[i], m_points[j]);
+
+	}
+	swap(m_points[i - 1], m_points[left]);
+	return i - 1;
+}
+
+void Kmeans::orderPoints(size_t left, size_t right)
+{
+	if (left >= right)
+	{
+		return;
 	}
 
+	size_t part = partition(left, right);
+
+	orderPoints(left, part - 1);
+	orderPoints(part + 1, right);
+}
+
+void Kmeans::makeRandomCentroids()
+{
+	size_t numberOfPoints = m_points.size();
+
+	double x = m_points[0].first, y = m_points[0].second;
+	for (size_t i = 1; i < numberOfPoints; i++)
+	{
+		if (m_points[i].first > x)
+		{
+			x = m_points[i].first;
+		}
+		if (m_points[i].second > y)
+		{
+			y = m_points[i].second;
+		}
+	}
+	size_t fieldSizeX = (size_t)ceil(x);
+	size_t fieldSizeY = (size_t)ceil(y);
+
+	m_clusterCentroids->init(m_k, numberOfPoints, fieldSizeX, fieldSizeY);
+
+	for (size_t i = 0; i < m_k; ++i)
+	{
+		m_closestCentroid[i];
+		clusterPointChanges[i];
+		m_pointsBelongingToCluster[i];
+	}
+}
+
+void Kmeans::putPointsInClusters()
+{
+	size_t numOfPoints = m_points.size();
+	for (size_t i = 0; i < numOfPoints; ++i)
+	{
+		Point p = m_points[i];
+		size_t indexAtAddingPoint = m_clusterCentroids->min(p);
+		m_closestCentroid.at(indexAtAddingPoint).push_back(i);
+		m_pointsBelongingToCluster.at(indexAtAddingPoint).insert(p);
+		cout << "point[" << p.first << ", " << p.second << "]; added to cluster ["
+			<< m_clusterCentroids->get(indexAtAddingPoint).first
+			<< ", " << m_clusterCentroids->get(indexAtAddingPoint).second << "]\n";
+	}
+}
+
+bool Kmeans::checkChanges()
+{
+	int counter = 0;
+	for (auto const& entryReal : m_closestCentroid)
+	{
+		for (auto const& entryChecking : clusterPointChanges)
+		{
+			if (entryReal.second.size() == entryChecking.second.size() && equal(entryReal.second.begin(), entryReal.second.begin() + entryReal.second.size(), entryChecking.second.begin()))
+			{
+				counter++;
+				break;
+			}
+		}
+	}
+	return counter == m_k;
+}
+
+void Kmeans::redefineClusters()
+{
+	m_closestCentroid.swap(clusterPointChanges);
+	for (auto& entry : m_closestCentroid)
+	{
+		entry.second.clear();
+	}
+}
+
+void Kmeans::makeNewClusters()
+{
+	m_clusterCentroids->clear();
+	for (size_t i = 0; i < m_k; ++i)
+	{
+		Point p = m_clusterCentroids->average(m_pointsBelongingToCluster.at(i));
+		cout << "new cluster centroid at position #" << i << "? -> " "[" << p.first << ", " << p.second << "]" << endl;
+		m_clusterCentroids->insert(p);		
+	}
+	for (auto& entry : m_pointsBelongingToCluster)
+	{
+		entry.second.clear();
+	}
+}
+
+void Kmeans::clusterize(size_t k)
+{
+	init(k);
+	int numOfPoints = m_points.size();
+	cout << "we are going to clusterize " << numOfPoints << " points" << endl;
+
+	do
+	{
+		putPointsInClusters();
+
+		if (!checkEmptyClusters() && checkChanges())
+		{
+			break;
+		}
+		redefineClusters();
+
+		makeNewClusters();
+
+	} while (true);
+
+	printResult();
 }
